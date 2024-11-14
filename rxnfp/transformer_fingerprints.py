@@ -131,15 +131,23 @@ def get_default_model_and_tokenizer(model='bert_ft', force_no_cuda=False):
     )
     return model, tokenizer
 
-def generate_fingerprints(rxns: List[str], fingerprint_generator:FingerprintGenerator, batch_size=1) -> np.array:
+def generate_fingerprints(rxns: List[str], fingerprint_generator: FingerprintGenerator, batch_size=1) -> np.array:
     fps = []
 
+    # Determine how many complete batches there are
     n_batches = len(rxns) // batch_size
+    remaining = len(rxns) % batch_size  # Check if there's a remaining partial batch
     emb_iter = iter(rxns)
+
     for i in tqdm(range(n_batches)):
         batch = list(islice(emb_iter, batch_size))
-
         fps_batch = fingerprint_generator.convert_batch(batch)
-
         fps += fps_batch
+
+    # Handle the last remaining batch, if any
+    if remaining > 0:
+        batch = list(islice(emb_iter, remaining))
+        fps_batch = fingerprint_generator.convert_batch(batch)
+        fps += fps_batch
+
     return np.array(fps)
